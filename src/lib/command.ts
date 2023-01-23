@@ -2,9 +2,18 @@
 class Argument {
     constructor(
         public name: string,
-        public value: string | undefined,
-        public isNullFunction: () => Promise<void>
+        public value: string,
+        private isNullFunction: () => Promise<void>,
     ) {}
+
+    async getIsNull(): Promise<boolean> {
+        const isNull = this.value ? false : true;
+        if (isNull) {
+            await this.isNullFunction();
+            return true;
+        }
+        return false;
+    }
 }
 
 class CommandHandler {
@@ -12,11 +21,23 @@ class CommandHandler {
     constructor(
         public name: string,
         execute: (...args: Argument[]) => Promise<void>,
-        public args: Argument[]
+        private args: Argument[]
     ) { this.run  = execute; }
     
     async execute() {
+        const isNull = this.checkNull(this.args);
+
+        if (isNull === false) {
+        }
         await this.run(...this.args);
+    }
+
+    private async checkNull(args: Argument[]) {
+        for (const arg of args) {
+            const isNull = await arg.getIsNull();
+            if (isNull) return true;
+        }
+        return false;
     }
 }
 
@@ -25,8 +46,8 @@ class CommandHandler {
 const exampleCommand = ["plus", "21"];
 const handler = new CommandHandler("calculate", 
     async (operator, number) => {
-        
+        operator.getIsNull()
     },
-    [ new Argument("operator", exampleCommand.at(0), async () => {}),
-      new Argument("number", exampleCommand.at(1), async () => {})    ]
+    [ new Argument("operator", exampleCommand[0], async () => {}),
+      new Argument("number", exampleCommand[1], async () => {})    ]
 )
